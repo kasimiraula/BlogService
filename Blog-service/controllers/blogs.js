@@ -13,33 +13,32 @@ blogsRouter.get('/', async (request, response) => {
 blogsRouter.post('/', async (request, response) => {
 
   try {
-      const decodedToken = jwt.verify(request.token, process.env.SECRET)
+    const decodedToken = jwt.verify(request.token, process.env.SECRET)
 
-      if (!request.token || !decodedToken.id) {
-        return response.status(401).json({ error: 'token missing or invalid' })
+    if (!request.token || !decodedToken.id) {
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
+
+    const body = validateParams(request.body)
+    if(body === null) {
+      return(response.status(400).end())
+    } else {
+      const blog = new Blog(body)
+
+      if (blog.likes === undefined || blog.likes === '') {
+        blog.likes = 0
       }
 
-  const body = validateParams(request.body)
-  if(body === null) {
-    return(response.status(400).end())
-  } else {
-  const blog = new Blog(body)
+      const user = await User.findById(decodedToken.id)
+      blog.user = user._id
 
-  if (blog.likes === undefined || blog.likes === '') {
-    blog.likes = 0
-  }
-  const user = await User.findById(decodedToken.id)
-
-  blog.user = user._id
-
-  const savedBlog = await blog.save()
-  user.blogs = user.blogs.concat(savedBlog._id)
-  await user.save()
-
-  response.status(201).json(formatBlog(savedBlog))
-  }
-} catch (exception) {
-  if (exception.name === 'JsonWebTokenError' ) {
+      const savedBlog = await blog.save()
+      user.blogs = user.blogs.concat(savedBlog._id)
+      await user.save()
+      response.status(201).json(formatBlog(savedBlog))
+    }
+  } catch (exception) {
+    if (exception.name === 'JsonWebTokenError' ) {
       response.status(401).json({ error: exception.message })
     } else {
       console.log(exception)
@@ -50,24 +49,23 @@ blogsRouter.post('/', async (request, response) => {
 
 blogsRouter.delete('/:id', async (request, response) => {
   try {
-      const decodedToken = jwt.verify(request.token, process.env.SECRET)
+    const decodedToken = jwt.verify(request.token, process.env.SECRET)
 
-      if (!request.token || !decodedToken.id) {
-        return response.status(401).json({ error: 'token missing or invalid' })
-      }
-      const blog = await Blog.findById(request.params.id)
-      console.log(blog)
-      if ( blog.user.toString() === decodedToken.id ) {
-        await Blog.remove(blog)
-        return response.status(204).end()
-      } else {
-        return response.status(401).json({error:'not authorized to delete the blog'}).send()
-      }
+    if (!request.token || !decodedToken.id) {
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
 
+    const blog = await Blog.findById(request.params.id)
+
+    if ( blog.user.toString() === decodedToken.id ) {
+      await Blog.remove(blog)
+      return response.status(204).end()
+    } else {
+      return response.status(401).json({error:'not authorized to delete the blog'}).send()
+    }
   } catch (ex) {
-
+    console.log('something went wrong again')
     return response.status(401).send({ error: `id does not exist ${ex}` })
-    console.log("something went wrong again")
   }
 })
 
@@ -77,16 +75,15 @@ blogsRouter.put('/:id', (request, response) => {
   if (body === null) {
     response.status(400).send({error: 'bad params given'})
   } else {
+    const blog = {
+      _id: body.id,
+      title: body.title,
+      author: body.author,
+      url: body.url,
+      likes: body.likes
+    }
 
-  const blog = {
-    _id: body.id,
-    title: body.title,
-    author: body.author,
-    url: body.url,
-    likes: body.likes
-  }
-
-  Blog
+    Blog
     .findByIdAndUpdate(request.params.id, blog, { new: true })
     .then(updatedBlog => {
       response.json(formatBlog(updatedBlog))

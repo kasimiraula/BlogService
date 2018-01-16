@@ -8,7 +8,7 @@ const mongoose = require('mongoose')
 
 const app = express()
 const middleware = require('./utils/middleware')
-const Blog = require('./models/blog')
+//const Blog = require('./models/blog')
 const config = require('./utils/config')
 
 app.use(cors())

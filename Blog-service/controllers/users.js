@@ -16,21 +16,18 @@ usersRouter.post('/', async (request, response) => {
     if (body === null) {
       return response.status(400).send()
     } else {
+      const saltRounds = 10
+      const passwordHash = await bcrypt.hash(body.password, saltRounds)
+      const user = new User({
+        username: body.username,
+        name: body.name,
+        passwordHash,
+        adult: body.adult || true
+      })
 
-    const saltRounds = 10
-    const passwordHash = await bcrypt.hash(body.password, saltRounds)
-
-    const user = new User({
-      username: body.username,
-      name: body.name,
-      passwordHash,
-      adult: body.adult || true
-    })
-
-    const savedUser = await user.save()
-
-    response.json(savedUser)
-  }
+      const savedUser = await user.save()
+      response.json(savedUser)
+    }
   } catch (exception) {
     console.log(exception)
     response.status(500).json({ error: 'something went wrong...' })
@@ -62,7 +59,7 @@ const validateParams = async (body, response) => {
 
 const validatePassword = (body) => {
   let err = ''
-  body.password.lengh > 3 ? true : err = "password has to be at least 3 digits"
+  body.password.lengh > 3 ? true : err = 'password has to be at least 3 digits'
   return err
 }
 

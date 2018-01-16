@@ -18,7 +18,7 @@ const mostLikes = (blogs) => {
   blogs.map(bl => likes.set(bl.author, 0))
   blogs.map(bl => likes.set(bl.author, likes.get(bl.author) + bl.likes))
 
-  mostlikes = findGreatestValueFromMap(likes)
+  let mostlikes = findGreatestValueFromMap(likes)
 
   return({author: mostlikes[0],votes: mostlikes[1]})
 }
@@ -34,7 +34,7 @@ const mostBlogs = (blogs) => {
   blogs.map(bl => blogsInTotal.set(bl.author, 0))
   blogs.map(bl => blogsInTotal.set(bl.author, blogsInTotal.get(bl.author) + 1))
 
-  mostblogs = findGreatestValueFromMap(blogsInTotal)
+  let mostblogs = findGreatestValueFromMap(blogsInTotal)
 
   return({
     author: mostblogs[0],
@@ -48,7 +48,7 @@ const favouriteBlog = (blogs) => {
   let max = 0
 
   blogs.forEach(function(blog){
-    formattedB = formatBlog(blog)
+    let formattedB = formatBlog(blog)
 
     if(max < blog.likes) {
       max = blog.likes
@@ -63,10 +63,10 @@ const favouriteBlog = (blogs) => {
 }
 
 const formatBlog = (blog) => {
-   const formattedBlog = { ...blog, id: blog._id}
-   delete formattedBlog._id
-   delete formattedBlog.__v
-   return(formattedBlog)
+  const formattedBlog = { ...blog, id: blog._id}
+  delete formattedBlog._id
+  delete formattedBlog.__v
+  return(formattedBlog)
 }
 
 const findGreatestValueFromMap = (blogs) => {
