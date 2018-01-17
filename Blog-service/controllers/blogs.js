@@ -69,29 +69,27 @@ blogsRouter.delete('/:id', async (request, response) => {
   }
 })
 
-blogsRouter.put('/:id', (request, response) => {
-  const body = validateParams(request.body)
+blogsRouter.put('/:id', async (request, response) => {
+  try {
+    const body = validateParams(request.body)
+    if (body === null) {
+      response.status(400).send({error: 'bad params given'})
+    } else {
 
-  if (body === null) {
-    response.status(400).send({error: 'bad params given'})
-  } else {
-    const blog = {
-      _id: body.id,
-      title: body.title,
-      author: body.author,
-      url: body.url,
-      likes: body.likes
-    }
+      const blog = {
+        title: body.title,
+        author: body.author,
+        url: body.url,
+        likes: body.likes,
+        user: body.user
+      }
 
-    Blog
-    .findByIdAndUpdate(request.params.id, blog, { new: true })
-    .then(updatedBlog => {
+      const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true }).populate('user', {username: 1, name:1})
       response.json(formatBlog(updatedBlog))
-    })
-    .catch(error => {
-      console.log(error)
-      response.status(400).send({ error: 'id does not exist' })
-    })
+    }
+  } catch (error) {
+    console.log(error)
+    response.status(400).send({ error: 'id does not exist' })
   }
 })
 

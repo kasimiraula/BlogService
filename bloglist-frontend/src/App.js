@@ -1,8 +1,10 @@
 import React from 'react'
 import Blog from './components/Blog'
 import BlogForm from './components/BlogForm'
+import Togglable from './components/Togglable'
 import blogService from './services/blogs'
 import loginService from './services/login'
+import './index.css'
 
 class App extends React.Component {
   constructor(props) {
@@ -59,21 +61,31 @@ class App extends React.Component {
        </div>
      )
    }
-
    return (
      <div>
      <Error message = {this.state.error}/>
      <Notification message = {this.state.notification}/>
-      <p>Logged in as {this.state.user.username} <button onClick={this.logout}>kirjaudu ulos</button></p>
+      <p>You are logged in as {this.state.user.username} <button onClick={this.logout}>kirjaudu ulos</button></p>
+      <Togglable buttonLabel="Add a new blog">
         <h2>Add new blog</h2>
         <BlogForm/>
+      </Togglable>
         <h2>Blogs</h2>
           {this.state.blogs.map(blog =>
-            <Blog key={blog._id} blog={blog} />
+            <Blog key={blog.id} blog={blog} removeHandler={this.removeBlog(blog)}/>
           )}
     </div>
   )
 }
+
+
+  removeBlog = (blog) => async() => {
+    if (window.confirm(`Do you really want to remove ${blog.title} ?` )) {
+      await blogService.remove(blog.id)
+    }
+    const blogs = await blogService.getAll()
+    this.setState({ blogs })
+  }
 
   login = async (e) => {
   e.preventDefault()
@@ -104,7 +116,10 @@ class App extends React.Component {
     e.preventDefault()
     window.localStorage.removeItem('loggedUser')
     blogService.setToken(null)
-    this.setState({ username: '', password: '', user:null})
+    this.setState({ username: '', password: '', user:null, notification:'Succesfully logged out'})
+    setTimeout(() => {
+      this.setState({ notification: null })
+    }, 3000)
   }
 
   handleLoginFieldChange = (e) => {

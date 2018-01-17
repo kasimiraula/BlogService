@@ -1,6 +1,6 @@
 import React from 'react'
-import Blog from './Blog'
 import blogService from '../services/blogs'
+import '../index.css'
 
 class BlogForm extends React.Component {
   constructor(props) {
@@ -18,33 +18,36 @@ class BlogForm extends React.Component {
   render() {
     return(
       <div>
-      <form onSubmit={this.addNewBlog}>
-        title:
-        <input
-          type="text"
-          name="title"
-          value={this.state.title}
-          onChange={this.handleFormFieldChange}
-        />
-        <br/>
-        author:
-        <input
-          type="text"
-          name="author"
-          value={this.state.author}
-          onChange={this.handleFormFieldChange}
-        />
-        <br/>
-        url:
-        <input
-          type="text"
-          name="url"
-          value={this.state.url}
-          onChange={this.handleFormFieldChange}
-        />
-        <button>Add a new blog</button>
-        </form>
-      </div>
+        <Notification message={this.state.notification}/>
+        <Error message={this.state.error}/>
+
+        <form onSubmit={this.addNewBlog}>
+          title:
+          <input
+            type="text"
+            name="title"
+            value={this.state.title}
+            onChange={this.handleFormFieldChange}
+          />
+          <br/>
+          author:
+          <input
+            type="text"
+            name="author"
+            value={this.state.author}
+            onChange={this.handleFormFieldChange}
+          />
+          <br/>
+          url:
+          <input
+            type="text"
+            name="url"
+            value={this.state.url}
+            onChange={this.handleFormFieldChange}
+          />
+          <button>Add a new blog</button>
+          </form>
+        </div>
     )
   }
 
@@ -69,7 +72,6 @@ class BlogForm extends React.Component {
         notification: `a new blog ${newBlog.title} by ${newBlog.author} was added`})
         setTimeout(() => {
           this.setState({notification: null})}, 3000)
-        console.log(newBlog.title)
       } catch (ex) {
         this.setState({
           error: `couldn't add new blog due to an error: ${ex}`})
@@ -77,6 +79,27 @@ class BlogForm extends React.Component {
             this.setState({error: null})}, 3000)
       }
   }
+}
+const Notification = ({ message }) => {
+  if (message === null) {
+    return null
+  }
+  return (
+    <div className="notification">
+      {message}
+    </div>
+  )
+}
+
+const Error = ({ message }) => {
+  if (message === null) {
+    return null
+  }
+  return (
+    <div className="error">
+      {message}
+    </div>
+  )
 }
 
 export default BlogForm
