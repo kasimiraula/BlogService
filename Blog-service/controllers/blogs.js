@@ -1,11 +1,13 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
+const Comment = require('../models/comment')
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({})
     .populate('user', {username: 1, name:1})
+    .populate('comments', {_id: 1, content:1})
 
   response.json(blogs.map(formatBlog))
 })
@@ -19,7 +21,7 @@ blogsRouter.post('/', async (request, response) => {
       return response.status(401).json({ error: 'token missing or invalid' })
     }
 
-    const body = validateParams(request.body)
+    const body = validateBlogParams(request.body)
     if(body === null) {
       return(response.status(400).end())
     } else {
@@ -37,6 +39,41 @@ blogsRouter.post('/', async (request, response) => {
       await user.save()
       response.status(201).json(formatBlog(savedBlog))
     }
+  } catch (exception) {
+    if (exception.name === 'JsonWebTokenError' ) {
+      response.status(401).json({ error: exception.message })
+    } else {
+      console.log(exception)
+      response.status(500).json({ error: 'something went wrong...' })
+    }
+  }
+})
+
+blogsRouter.post('/:id/comments', async (request, response) => {
+
+  try {
+    const decodedToken = jwt.verify(request.token, process.env.SECRET)
+
+    if (!request.token || !decodedToken.id) {
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
+    //one should validate params here
+    const body = request.body
+
+    if(body === null) {
+      return(response.status(400).end())
+    }
+
+    const comment = new Comment(body)
+    const blog = await Blog.findById(request.params.id)
+    comment.blog = blog._id
+    const savedComment = await comment.save()
+
+    blog.comments = blog.comments.concat(savedComment._id)
+    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true }).populate('user', {username: 1, name:1}).populate('comments', {_id: 1, content:1})
+
+    response.status(201).json(formatBlog(updatedBlog))
+
   } catch (exception) {
     if (exception.name === 'JsonWebTokenError' ) {
       response.status(401).json({ error: exception.message })
@@ -71,20 +108,20 @@ blogsRouter.delete('/:id', async (request, response) => {
 
 blogsRouter.put('/:id', async (request, response) => {
   try {
-    const body = validateParams(request.body)
+    const body = validateBlogParams(request.body)
     if (body === null) {
       response.status(400).send({error: 'bad params given'})
     } else {
-
       const blog = {
         title: body.title,
         author: body.author,
         url: body.url,
         likes: body.likes,
-        user: body.user
+        user: body.user,
+        comments: body.comments
       }
 
-      const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true }).populate('user', {username: 1, name:1})
+      const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true }).populate('user', {username: 1, name:1}).populate('comments', {_id: 1, content:1})
       response.json(formatBlog(updatedBlog))
     }
   } catch (error) {
@@ -93,7 +130,7 @@ blogsRouter.put('/:id', async (request, response) => {
   }
 })
 
-const validateParams = (body) => {
+const validateBlogParams = (body) => {
 
   if (body.likes === undefined) {
     body.likes = 0
@@ -113,7 +150,8 @@ const formatBlog = (blog) => {
     likes: blog.likes,
     url: blog.url,
     id: blog._id,
-    user: blog.user
+    user: blog.user,
+    comments: blog.comments
   }
 }
 

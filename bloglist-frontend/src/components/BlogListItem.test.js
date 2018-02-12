@@ -1,8 +1,8 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-import Blog from './Blog'
+import BlogListItem from './BlogListItem'
 
-describe.only('<Blog />', () => {
+describe.only('<BlogListItem />', () => {
 
   let blogComponent
   beforeEach(() => {

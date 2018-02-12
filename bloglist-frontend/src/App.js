@@ -1,240 +1,148 @@
 import React from 'react'
 import {connect} from 'react-redux'
-import { BrowserRouter as Router, Route, NavLink, Link } from 'react-router-dom'
-//import Blog from './components/Blog'
+import { BrowserRouter as Router, Route, NavLink } from 'react-router-dom'
+import {initializeBlogs, likeBlog} from './reducers/blogReducer'
+import {initializeLoggedUser, login, logout} from './reducers/loginReducer'
+import {initializeUsers} from './reducers/userReducer'
+import {notify} from './reducers/notificationReducer'
+
+import User from './components/User'
+import LoginForm from './components/LoginForm'
+import Blog from './components/Blog'
 import BlogForm from './components/BlogForm'
 import Togglable from './components/Togglable'
-import blogService from './services/blogs'
-import loginService from './services/login'
-//import userService from './services/user'
-import {initializeBlogs} from './reducers/blogReducer'
-//import UserList from './components/UserList'
+import UserList from './components/UserList'
 import BlogList from './components/BlogList'
+import Notification from './components/Notification'
 import './index.css'
 
 class App extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      error: null,
-      username: '',
-      password: '',
-      user: null,
-      users: [],
-      notification: null
-    }
-  }
 
   componentWillMount = async () => {
-  /*
-    userService.getAll().then(users =>
-    this.setState({ users })
-  )
-  */
-    this.props.initializeBlogs()
-
-    const loggedUserJSON = window.localStorage.getItem('loggedUser')
-    if (loggedUserJSON) {
-      const user = JSON.parse(loggedUserJSON)
-      this.setState({user})
-      blogService.setToken(user.token)
-    }
+    await this.props.initializeBlogs()
+    await this.props.initializeUsers()
+    await this.props.initializeLoggedUser()
   }
 
-  userById = (id) => this.state.users.find(u => u.id === id)
 
   render() {
-    if (this.state.user === null) {
+    if (this.props.loggedUser === null || this.props.loggedUser === undefined) {
      return (
-       <div>
+       <div className='container'>
        <h2>blog app</h2>
-       <Error message = {this.state.error}/>
-       <LoginForm loginHandler={this.login} fieldChangeHandler={this.handleLoginFieldChange} username={this.state.username} password={this.state.password}/>
+       <Notification/>
+       <LoginForm loginHandler={this.login}/>
        </div>
      )
    }
 
+   const userById = (id) =>
+     (this.props.users.find(u => u.id === id))
+
+     const blogById = (id) =>
+       (this.props.blogs.find(bl => bl.id === id))
+
    return (
      <div className='container'>
-       <h2>blog app</h2>
-       <Error message = {this.state.error}/>
-       <Notification message = {this.state.notification}/>
-       <p>You are logged in as {this.state.user.username} <button onClick={this.logout}>kirjaudu ulos</button></p>
-         <Router>
-          <div>
-            <Togglable buttonLabel="Add new blog">
-              <BlogForm/>
-            </Togglable>
-            <Route exact path="/" render={() => <BlogList/>} />
-            <Route exact path="/users" render={() => <UserList users={this.state.users}/>} />
-            <Route exact path="/users/:id" render={({match}) => <User user={this.userById(match.params.id)} />}/>
-            <Footer/>
-          </div>
-        </Router>
+     <Router>
+     <div>
+     <h2>blog app</h2>
+     <Notification/>
+        <div>
+        <Menu/>
+        <p>You are logged in as {this.props.loggedUser.username} <button onClick={this.logout}>kirjaudu ulos</button></p>
+          <Togglable buttonLabel="Add new blog">
+            <BlogForm/>
+          </Togglable>
+          <Route exact path="/" render={() => <BlogList/>} />
+          <Route exact path="/users" render={() => <UserList/>} />
+          <Route exact path="/blogs/:id" render={({match}) => <Blog key={match.params.id} blog={blogById(match.params.id)} likeHandler={() => this.props.likeBlog(blogById(match.params.id))} />}/>
+          <Route exact path="/users/:id" render={({match}) => <User key={match.params.id} user={userById(match.params.id)} />}/>
+        </div>
+        </div>
+      </Router>
     </div>
   )
 }
 
-
-  login = async(e) => {
+login = async(e) => {
     e.preventDefault()
-    try{
-      const user = await loginService.login({
-        username: this.state.username,
-        password: this.state.password
-      })
-      window.localStorage.setItem('loggedUser', JSON.stringify(user))
-      blogService.setToken(user.token)
-
-      const notification = `Succesfully logged in as ${user.username}`
-      this.setState({ username: '', password: '', user, notification, error:null})
-      setTimeout(() => {
-        this.setState({ notification: null })
-      }, 3000)
+    try {
+      await this.props.login({
+      username: e.target.username.value,
+      password: e.target.password.value})
+      const notification = `Succesfully logged in as ${this.props.loggedUser.username}`
+      this.props.notify(notification, 'general', 5)
     } catch(exception) {
-      this.setState({
-        error: 'username or password was incorrect',
-      })
-      setTimeout(() => {
-        this.setState({ error: null })
-      }, 3000)
+        const error = 'username or password was incorrect'
+        this.props.notify(error, 'error', 5)
     }
-  }
+}
 
   logout = (e) => {
     e.preventDefault()
-    window.localStorage.removeItem('loggedUser')
-    blogService.setToken(null)
-    this.setState({ username: '', password: '', user:null, notification:'Succesfully logged out'})
-    setTimeout(() => {
-      this.setState({ notification: null })
-    }, 3000)
+    this.props.logout()
+    const notification = 'Succesfully logged out'
+    this.props.notify(notification, 'general', 4)
   }
+}
 
-  handleLoginFieldChange = (e) => {
-  this.setState({ [e.target.name]: e.target.value })
+const Menu = () => {
+  const style = {
+    background: 'lightblue',
+    borderRadius: 6,
+    padding: 15,
+    margin: 15,
+    width: 250
   }
-
-}
-
-const UserList = ({ users }) => {
-  return (
-    <div className = 'container'>
-      <h2>Users</h2>
-      <table>
-        <thead>
-          <tr>
-            <th/>
-            <th>added blogs</th>
-          </tr>
-        </thead>
-        <tbody>
-          {this.state.users.map(user=>
-            <tr key={user.id}>
-              <td>{user.username}</td>
-              <td style={{paddingLeft:20}}>{user.blogs.length}</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-const User = ({ user }) => {
-  return (
-    <div>
-      <h2>{user.name}</h2>
-      <h3>Added blogs</h3>
-      <ul>
-        {user.blogs.map(blog =>
-        <li>{blog}</li>
-        )}
-      </ul>
-    </div>
-  )
-}
-
-const Footer = () => {
-  const footerStyle = {
-      padding: 25,
-      paddingLeft: 50
+  const selected = {
+    background: 'white',
+    padding: 2,
+    paddingTop: 16,
+    paddingBottom: 18,
   }
 
   return(
-    <div style = {footerStyle}>
-      <NavLink exact to="/">Front page</NavLink><br/>
-      <NavLink to="/users">See other blog app users</NavLink>
+    <div style={style}>
+      <NavLink activeStyle={selected} exact to="/">blogs</NavLink> &nbsp;
+      <NavLink activeStyle={selected} exact to="/users">users</NavLink>
     </div>
   )
 }
 
-/*
-const BlogList = ({ blogs, user, removeHandler }) => {
-  return(
-    <div>
-      <h2>Blogs</h2>
-      {blogs.map(blog =>
-        <Blog key={blog.id} blog={blog} isByLoggedUser={user.username===blog.user.username} removeHandler={removeHandler(blog)}/>
-      )}
-    </div>
-  )
-}
-*/
+/*const Blog = ({ blog }) => {
+  if(blog === undefined) {
+    return <div></div>
+  }
 
-const LoginForm = ({ username, password, loginHandler, fieldChangeHandler }) => {
+  const like = (blog) => this.props.likeBlog(blog)
+
   return (
     <div>
-      <h2>Log in</h2>
-      <form onSubmit={loginHandler}>
-        <div>
-          username
-          <input
-            type="text"
-            name="username"
-            value={username}
-            onChange={fieldChangeHandler}
-          />
-        </div>
-        <div>
-          password
-          <input
-            type="password"
-            name="password"
-            value={password}
-            onChange={fieldChangeHandler}
-          />
-        </div>
-        <button>log in</button>
-      </form>
+      <h2>{blog.title} by {blog.author}</h2>
+      <p><a href={blog.url}>{blog.url}</a></p>
+      <p>likes: {blog.likes} <button onClick={like}>like</button></p>
+      <p>added by {blog.user.name ? blog.user.name : `a user ${blog.user.username}`}</p>
     </div>
   )
-}
+}*/
 
-const Notification = ({ message }) => {
-  if (message === null) {
-    return null
-  }
-  return (
-    <div className="notification">
-      {message}
-    </div>
-  )
+const mapStateToProps = (state) => {
+    return {
+      loggedUser: state.loggedUser,
+      users : state.users,
+      blogs : state.blogs,
+      notification: state.notification
+    }
 }
-
-const Error = ({ message }) => {
-  if (message === null) {
-    return null
-  }
-  return (
-    <div className="error">
-      {message}
-    </div>
-  )
-}
-
-//<Route exact path="/" render={() => <BlogList blogs={this.state.blogs} user={this.state.user} removeHandler={this.removeBlog} />} />
 
 export default connect(
-  null,
-  {initializeBlogs}
+  mapStateToProps,
+  {initializeBlogs,
+  initializeUsers,
+  likeBlog,
+  login,
+  logout,
+  initializeLoggedUser,
+  notify}
 )(App)

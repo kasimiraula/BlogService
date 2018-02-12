@@ -1,25 +1,15 @@
 import React from 'react'
 import {connect} from 'react-redux'
-import blogService from '../services/blogs'
 import {createBlog} from './../reducers/blogReducer'
+import {notify} from './../reducers/notificationReducer'
 import '../index.css'
 
 class BlogForm extends React.Component {
-
-  constructor(props) {
-    super(props)
-    this.state = {
-      notification: null,
-      error: null
-    }
-  }
 
   render() {
     return(
       <div>
         <h2>Add new blog</h2>
-        <Notification message={this.state.notification}/>
-        <Error message={this.state.error}/>
 
         <form onSubmit={this.addNewBlog}>
           title:
@@ -54,45 +44,31 @@ class BlogForm extends React.Component {
         author: e.target.author.value,
         url: e.target.url.value
       }
+
       this.props.createBlog(newBlog)
 
-      this.setState({
-        notification: `a new blog ${newBlog.title} by ${newBlog.author} was added`})
-        setTimeout(() => {
-          this.setState({notification: null})}, 3000)
+      e.target.title.value = ''
+      e.target.author.value = ''
+      e.target.url.value = ''
+
+      const notification= `a new blog ${newBlog.title} by ${newBlog.author} was added`
+      this.props.notify(notification, 'success', 5)
       } catch (ex) {
-        this.setState({
-          error: `couldn't add new blog due to an error: ${ex}`})
-          setTimeout(() => {
-            this.setState({error: null})}, 3000)
+        const error = `couldn't add new blog due to an error: ${ex}`
+        this.props.notify(error, 'error', 5)
       }
+
+    }
   }
 
-}
-
-const Notification = ({ message }) => {
-  if (message === null) {
-    return null
+const mapStateToProps = (state) => {
+  return {
+    notification: state.notification
   }
-  return (
-    <div className="notification">
-      {message}
-    </div>
-  )
-}
-
-const Error = ({ message }) => {
-  if (message === null) {
-    return null
-  }
-  return (
-    <div className="error">
-      {message}
-    </div>
-  )
 }
 
 export default connect(
-  null,
-  {createBlog}
+  mapStateToProps,
+  {createBlog,
+  notify}
 )(BlogForm)

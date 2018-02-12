@@ -1,17 +1,17 @@
-/*import React from 'react'
+import React from 'react'
+import {connect} from 'react-redux'
+import {login} from './../reducers/loginReducer'
+import {notify} from './../reducers/notificationReducer'
 
 class LoginForm extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      loginHandler: this.props.loginHandler,
-      fieldChangeHandler: this.props.fieldChangeHandler,
-      username: this.props.username,
-      password: this.props.password
+      loginHandler: this.props.loginHandler
     }
   }
 
-  render(){
+  render() {
     return (
       <div>
         <h2>Log in</h2>
@@ -21,8 +21,6 @@ class LoginForm extends React.Component {
             <input
               type="text"
               name="username"
-              value={this.state.username}
-              onChange={this.state.loginFieldChangeHandler}
             />
           </div>
           <div>
@@ -30,15 +28,38 @@ class LoginForm extends React.Component {
             <input
               type="password"
               name="password"
-              value={this.state.password}
-              onChange={this.state.loginFieldChangeHandler}
-            />
+              />
           </div>
           <button>log in</button>
         </form>
       </div>
     )
   }
+
+/*  login = async(e) => {
+    e.preventDefault()
+    try{
+      const user = this.props.login({
+        username: e.target.username.value,
+        password: e.target.password.value
+      })
+      window.localStorage.setItem('loggedUser', JSON.stringify(user))
+      blogService.setToken(user.token)
+
+      const notification = `Succesfully logged in as ${user.username}`
+      this.props.notify(notification, 'general', 5)
+    } catch(exception) {
+        const error = 'username or password was incorrect'
+        this.props.notify(error, 'error', 5)
+      }
+  }*/
 }
 
-export default LoginForm*/
+//const mapStateToProps = (state) => {
+//  loggedUser: state.loggedUser
+//}
+
+export default connect(
+  null,
+  {login,notify}
+)(LoginForm)

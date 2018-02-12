@@ -1,20 +1,18 @@
 import React from 'react'
-import { BrowserRouter as Link } from 'react-router-dom'
+//import { BrowserRouter as Link } from 'react-router-dom'
+import {Table} from 'react-bootstrap'
+import {connect} from 'react-redux'
 
 class UserList extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      users: props.users
-    }
-  }
 
   render() {
-    console.log(this.state.users)
+    if(this.props.users.length === 0) {
+      return <div></div>
+    }
     return (
       <div className = 'container'>
         <h2>Users</h2>
-        <table>
+        <Table striped>
           <thead>
             <tr>
               <th/>
@@ -22,17 +20,26 @@ class UserList extends React.Component {
             </tr>
           </thead>
           <tbody>
-            {this.state.users.map(user=>
-              <tr key={user.id}>
-                <td>{user.username}</td>
-                <td style={{paddingLeft:20}}>{user.blogs.length}</td>
-              </tr>
+            {this.props.users.map(user=>
+                <tr key={user.id}>
+                  <td><a href={`/users/${user.id}`}>{user.username}</a></td>
+                  <td style={{paddingLeft:20}}>{user.blogs.length}</td>
+                </tr>
             )}
           </tbody>
-        </table>
+        </Table>
       </div>
     )
   }
 }
-//<Link to={`/users/${user.id}`}></Link>
-export default UserList
+// <td><Link to={`/users/${user.id}`}>{user.username}</Link></td>
+
+const mapStateToProps = (state) => {
+  return {
+    users : state.users
+  }
+}
+
+export default connect(
+  mapStateToProps
+)(UserList)

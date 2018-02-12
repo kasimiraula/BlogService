@@ -1,6 +1,7 @@
 import React from 'react'
 import {connect} from 'react-redux'
-import Blog from './Blog'
+import {Table} from 'react-bootstrap'
+import BlogListItem from './BlogListItem'
 import {likeBlog, removeBlog} from './../reducers/blogReducer'
 
 class BlogList extends React.Component {
@@ -9,9 +10,15 @@ class BlogList extends React.Component {
     return(
       <div>
         <h2>Blogs</h2>
-        {this.props.blogs.map(blog =>
-          <Blog key={blog.id} blog={blog} likeHandler={this.handleLike(blog)} removeHandler={this.handleRemove(blog)}/>
-        )}
+        <Table striped>
+          <tbody>
+            {this.props.blogs.map(blog =>
+            <tr key={blog.id}>
+              <td><BlogListItem key={blog.id} blog={blog} removeHandler={this.handleRemove(blog)}/></td>
+            </tr>
+            )}
+          </tbody>
+        </Table>
       </div>
     )
   }
@@ -28,12 +35,16 @@ class BlogList extends React.Component {
     }
   }
 }
-// <Blog key={blog.id} blog={blog} isByLoggedUser={user.username===blog.user.username} removeHandler={removeHandler(blog)}/>
-// isByLoggedUser={user.username===blog.user.username} <br/>
+
+const orderBlogs = (blogs) => {
+  const orderBlogs = blogs.sort((a,b) => b.likes - a.likes)
+  return orderBlogs
+}
 
 const mapStateToProps = (state) => {
   return {
-    blogs : state.blogs
+    blogs : orderBlogs(state.blogs),
+    loggedUser : state.loggedUser
   }
 }
 
